@@ -19,9 +19,18 @@ class GoogleBooksAPI:
         hostname: str = GOOGLE_BOOKS_API_URL,
         ver: str = "v1",
         logger: logging.Logger = None,
+        api_key: str = None,
     ):
         """Constructor for GoogleBooksAPI"""
+        self.api_key = api_key
         self._rest_adapter = RestAdapter(hostname, ver, logger)
+
+    def _get_params(self, **kwargs):
+        """
+        Helper method to generate endpoint parameters and append the API key if available.
+        """
+        params = GoogleBooksSearchParams(**kwargs).generate(api_key=self.api_key)
+        return params
 
     def search_book(
         self,
@@ -49,16 +58,18 @@ class GoogleBooksAPI:
         :return: A BookSearchResultSet objects
         :rtype: BookSearchResultSet
         """
+        params = self._get_params(
+            search_term=search_term,
+            isbn=isbn,
+            publisher=publisher,
+            author=author,
+            title=title,
+            subject=subject,
+        )
+
         response = self._rest_adapter.get(
             endpoint="volumes",
-            ep_params=GoogleBooksSearchParams(
-                search_term=search_term,
-                isbn=isbn,
-                publisher=publisher,
-                author=author,
-                title=title,
-                subject=subject,
-            ).generate(),
+            ep_params=params,
         )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set
@@ -92,14 +103,14 @@ class GoogleBooksAPI:
         :return: A Book object
         :rtype: Book
         """
+        params = self._get_params(title=title)
         response = self._rest_adapter.get(
-        endpoint="volumes",
-        ep_params=GoogleBooksSearchParams(title=title).generate(),
+            endpoint="volumes",
+            ep_params=params,
         )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set.get_best_match()
 
-    
     def get_books_by_author(self, author: str) -> BookSearchResultSet:
         """Searches for books based on a particular author
 
@@ -108,9 +119,10 @@ class GoogleBooksAPI:
         :return: A BookSearchResultSet Object
         :rtype: BookSearchResultSet
         """
+        params = self._get_params(author=author)
         response = self._rest_adapter.get(
-        endpoint="volumes",
-        ep_params=GoogleBooksSearchParams(author=author).generate(),
+            endpoint="volumes",
+            ep_params=params,
         )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set
@@ -123,9 +135,10 @@ class GoogleBooksAPI:
         :return: A BookSearchResultSet Object
         :rtype: BookSearchResultSet
         """
+        params = self._get_params(publisher=publisher)
         response = self._rest_adapter.get(
-        endpoint="volumes",
-        ep_params=GoogleBooksSearchParams(publisher=publisher).generate(),
+            endpoint="volumes",
+            ep_params=params,
         )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set
@@ -138,18 +151,20 @@ class GoogleBooksAPI:
         :return: A result set of Book items
         :rtype: BookSearchResultSet
         """
-        response = self._rest_adapter.get(endpoint="volumes",
-            ep_params=GoogleBooksSearchParams(
-                subject=subject
-            ).generate())
+        params = self._get_params(subject=subject)
+        response = self._rest_adapter.get(
+            endpoint="volumes",
+            ep_params=params,
+        )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set
-    
+
     def _get_book_by_isbn(self, isbn: str) -> Book:
-        """Base implementation of getting a book by isbn, used internally"""
+        """Base implementation of getting a book by ISBN, used internally"""
+        params = self._get_params(isbn=isbn)
         response = self._rest_adapter.get(
-        endpoint="volumes",
-        ep_params=GoogleBooksSearchParams(isbn=isbn).generate(),
+            endpoint="volumes",
+            ep_params=params,
         )
         result_set = BookSearchResultSet.from_google_books_api_response(response.data)
         return result_set.get_best_match()

@@ -222,9 +222,12 @@ class GoogleBooksSearchParams:
         self.author = author
         self.subject = subject
 
-    def generate(self) -> str:
+
+    def generate(self, api_key: str = None) -> str:
         """Generates URL Query String based on item properties
 
+        :param api_key: Optional API key to include in the query string.
+        :type api_key: str, optional
         :return: Query String
         :rtype: str
         """
@@ -232,7 +235,10 @@ class GoogleBooksSearchParams:
         search_term_with_filters: str = None
         if len(filters) > 0:
             search_term_with_filters = self._get_search_term_with_filters()
-        return urllib.parse.urlencode({"q": search_term_with_filters or self.search_term, "maxResults": 40}, safe=":+")
+        params = {"q": search_term_with_filters or self.search_term, "maxResults": 40}
+        if api_key:
+            params["key"] = api_key
+        return urllib.parse.urlencode(params, safe=":+")
 
     def _get_used_filters(self) -> list[str]:
         used_properties = []
